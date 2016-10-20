@@ -1,8 +1,7 @@
 ---
 
 - name: Manage Elastic Beats data shippers
-  #  hosts: [ 'debops_service_elasticbeats' ]
-  hosts: all
+  hosts: [ 'debops_service_elasticbeats' ]
   become: True
 
   environment: '{{ inventory__environment | d({})
