@@ -1,0 +1,24 @@
+---
+
+ansigenome_info:
+  galaxy_url: 'https://galaxy.ansible.com/debops-contrib/beats'
+  github_url: 'https://github.com/debops-contrib/ansible-beats'
+  git_branch: 'master'
+
+  travis: True
+
+  license_url: 'https://tldrlegal.com/license/gnu-general-public-license-v3-(gpl-3)'
+
+  authors:
+
+    - name:  'Reto Gantenbein'
+      email: 'reto.gantenbein@linuxmonk.ch'
+      github: 'ganto'
+
+  synopsis: |
+    Elastic [Beats](https://www.elastic.co/products/beats/) are lightweight data
+    shippers for transferring log messages, application and host metrics and much
+    more into a log parser connected to Elasticsearch.
+
+    The `debops-contrib.beats` role installs and configures various types of
+    `beats` services.

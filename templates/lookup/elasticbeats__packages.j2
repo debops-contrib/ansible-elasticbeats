@@ -1,0 +1,9 @@
+{% set _packages = [] %}
+{% for _beat in elasticbeats__beats|d([]) %}
+{%   if "packages" in _beat %}
+{%      set _ = _packages.append(_beat["packages"]) %}
+{%   else %}
+{%      set _ = _packages.append([ _beat["name"] ]) %}
+{%   endif %}
+{% endfor %}
+{{ _packages | to_nice_yaml }}

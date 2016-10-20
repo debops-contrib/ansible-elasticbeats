@@ -1,0 +1,66 @@
+---
+
+- name: Add Elastic Beats APT OpenGPG public key
+  apt_key:
+    id: '{{ elasticbeats__apt_repo_key_id | replace(" ", "") }}'
+    keyserver: '{{ ansible_local.core.keyserver
+                if (ansible_local|d() and ansible_local.core|d() and
+                    ansible_local.core.keyserver|d())
+                else "hkp://pool.sks-keyservers.net" }}'
+    state: present
+  register: elasticbeats__register_apt_key
+  when: elasticbeats__apt_repo_key_id|d(False)
+  tags: [ 'role::elasticbeats:repo' ]
+
+- name: Configure Elastic Beats APT repository
+  template:
+    src: 'etc/apt/sources.list.d/debops_elasticbeats.list.j2'
+    dest: '/etc/apt/sources.list.d/debops_elasticbeats.list'
+    owner: 'root'
+    group: 'root'
+    mode: '0420'
+  register: elasticbeats__register_apt_repository
+  when: elasticbeats__apt_repo_source|d(False)
+  tags: [ 'role::elasticbeats:repo' ]
+
+- name: Update APT repository cache
+  apt:
+    update_cache: True
+  when: elasticbeats__register_apt_key|changed or elasticbeats__register_apt_repository|changed
+  tags: [ 'role::elasticbeats:repo' ]
+
+- name: Ensure specified packages are in there desired state
+  package:
+    name: '{{ item }}'
+    state: 'present'
+  with_flattened: '{{ lookup("template", "lookup/elasticbeats__packages.j2") | from_yaml }}'
+
+- name: Divert original config
+  command: 'dpkg-divert --quiet --local --divert {{ item.0 }}/{{ item.1 }}.dpkg-divert --rename {{ item.0 }}/{{ item.1 }}'
+  args:
+    creates: '{{ item.0 }}/{{ item.1 }}.dpkg-divert'
+  with_together:
+    - '{{ lookup("template", "lookup/elasticbeats__configdirs.j2") }}'
+    - '{{ lookup("template", "lookup/elasticbeats__configfiles.j2") }}'
+
+- name: Configure Beats services
+  template:
+    src: '{{ item.0 | regex_replace("^/", "") }}/{{ item.1 }}.j2'
+    dest: '{{ item.0 }}/{{ item.1 }}'
+    owner: 'root'
+    group: 'root'
+    mode: '0640'
+    validate: '{{ item.2 }} -c %s -configtest'
+  notify:
+    - 'Restart {{ item.2 | title }}'
+  with_together:
+    - '{{ lookup("template", "lookup/elasticbeats__configdirs.j2") }}'
+    - '{{ lookup("template", "lookup/elasticbeats__configfiles.j2") }}'
+    - '{{ lookup("template", "lookup/elasticbeats__services.j2") }}'
+
+- name: Ensure Beat services are in the desired state
+  service:
+    name: '{{ item }}'
+    state: 'started'
+    enabled: True
+  with_items: '{{ lookup("template", "lookup/elasticbeats__services.j2") }}'

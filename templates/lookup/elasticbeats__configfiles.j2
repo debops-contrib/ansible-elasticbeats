@@ -1,0 +1,9 @@
+{% set _configfiles = [] %}
+{% for _beat in elasticbeats__beats|d([]) %}
+{%   if "" in _beat %}
+{%      set _ = _configfiles.extend(_beat["configfile"]) %}
+{%   else %}
+{%      set _ = _configfiles.append(_beat["name"] + ".yml") %}
+{%   endif %}
+{% endfor %}
+{{ _configfiles }}

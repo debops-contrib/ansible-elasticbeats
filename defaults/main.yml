@@ -1,0 +1,137 @@
+---
+# .. vim: foldmarker=[[[,]]]:foldmethod=marker
+
+# debops-contrib.elasticbeats default variables [[[
+# =================================================
+
+# .. contents:: Sections
+#    :local:
+#
+# .. include:: includes/all.rst
+
+
+# Beats configuration [[[
+# -----------------------
+
+# .. envvar:: elasticbeats__beats [[[
+#
+# List of Beats definitions which should be configured on the server. You
+# might likely want to define your custom Beats. See
+# :envvar:`elasticbeats__beats_defaults` for a minimal default configuration.
+elasticbeats__beats: '{{ elasticbeats__beats_defaults }}'
+
+                                                                   # ]]]
+# .. envvar:: elasticbeats__beats_defaults [[[
+#
+# Minimal beats configuration. Acts as default configuration for your custom
+# Beats definitions.
+elasticbeats__beats_defaults:
+
+  - name: 'filebeat'
+    config:
+      filebeat:
+        prospectors:
+          -
+            paths:
+              - /var/log/*.log
+        registry_file: /var/lib/filebeat/registry
+      output: '{{ elasticbeats__output_defaults }}'
+      shipper: {}
+      logging: '{{ elasticbeats__logging_defaults }}'
+
+  - name: 'topbeat'
+    config:
+      input:
+        period: 10
+        procs: [".*"]
+        stats:
+          system: true
+          process: true
+          filesystem: true
+          cpu_per_core: false
+      output: '{{ elasticbeats__output_defaults }}'
+      shipper: {}
+      logging: '{{ elasticbeats__logging_defaults }}'
+
+  - name: 'packetbeat'
+    config:
+      interfaces:
+        device: any
+      protocols: '{{ elasticbeats__protocol_defaults }}'
+      output: '{{ elasticbeats__output_defaults }}'
+      shipper: {}
+      logging: '{{ elasticbeats__logging_defaults }}'
+
+                                                                   # ]]]
+# .. envvar:: elasticbeats__output_defaults [[[
+#
+# Default output definition for all Beats.
+elasticbeats__output_defaults:
+  elasticsearch:
+    hosts:
+      - 'localhost:9200'
+                                                                   # ]]]
+# .. envvar:: elasticbeats__logging_defaults [[[
+#
+# Default logging definition for all Beats.
+elasticbeats__logging_defaults:
+  to_syslog: true
+                                                                   # ]]]
+# .. envvar:: elasticbeats__protocol_defaults
+#
+# Default protocol definitions for Packetbeat.
+elasticbeats__protocol_defaults:
+  dns:
+    ports: [53]
+    include_authorities: true
+    include_additionals: true
+  http:
+    ports: [80, 8080, 8000, 5000, 5601, 8002]
+  memcache:
+    ports: [11211]
+  mysql:
+    ports: [3306]
+  pgsql:
+    ports: [5432]
+  redis:
+    ports: [6379]
+  thrift:
+    ports: [9090]
+                                                                   # ]]]
+                                                                   # ]]]
+# Packages and installation [[[
+# -----------------------------
+
+# .. envvar:: elasticbeats__deploy_state [[[
+#
+# What is the desired state which this role should achieve? Possible options:
+#
+# ``present``
+#   Default. Ensure that Kibana is installed and configured as requested.
+#
+# ``latest``
+#   Ensure that the Kibana packages are updated if newer versions are avilable
+#   in the APT repository.
+#
+# ``absent``
+#   Ensure that Kibana is uninstalled and it's configuration is removed.
+#
+elasticbeats__deploy_state: 'present'
+
+                                                                   # ]]]
+# .. envvar:: elasticbeats__apt_repo_source [[[
+#
+# APT ``source.list`` configuration string of the Beats ``.deb.`` repository.
+# Set to ``False`` if the repository providing the Beats packages is
+# configured through other means.
+elasticbeats__apt_repo_source: 'deb https://packages.elastic.co/beats/apt stable main'
+
+                                                                   # ]]]
+# .. envvar:: elasticbeats__apt_repo_key_id [[[
+#
+# Package signing GPG public key fingerprint. Set to ``False`` if the key is
+# provided through other means or the packages are not signed.
+elasticbeats__apt_repo_key_id: '4609 5ACC 8548 582C 1A26 99A9 D27D 666C D88E 42B4'
+
+                                                                   # ]]]
+                                                                   # ]]]

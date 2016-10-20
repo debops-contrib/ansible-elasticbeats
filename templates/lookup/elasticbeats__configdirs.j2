@@ -1,0 +1,9 @@
+{% set _configdirs = [] %}
+{% for _beat in elasticbeats__beats|d([]) %}
+{%   if "" in _beat %}
+{%      set _ = _configdirs.extend(_beat["configdir"]) %}
+{%   else %}
+{%      set _ = _configdirs.append("/etc/" + _beat["name"]) %}
+{%   endif %}
+{% endfor %}
+{{ _configdirs }}

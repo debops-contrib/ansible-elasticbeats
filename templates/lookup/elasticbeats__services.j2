@@ -1,0 +1,9 @@
+{% set _services = [] %}
+{% for _beat in elasticbeats__beats|d([]) %}
+{%   if "service" in _beat %}
+{%      set _ = _services.extend(_beat["service"]) %}
+{%   else %}
+{%      set _ = _services.append(_beat["name"]) %}
+{%   endif %}
+{% endfor %}
+{{ _services }}

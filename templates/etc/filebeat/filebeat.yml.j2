@@ -1,0 +1,22 @@
+{% set _config = {} %}
+{% for _default in elasticbeats__beats_defaults %}
+{%   if _default['name'] == 'filebeat' %}
+{%     for _section in [ 'filebeat', 'output', 'shipper', 'logging' ] %}
+{%       if 'config' in _default and _section in _default['config'] %}
+{%         set _ = _config.update({_section: _default['config'][_section]|d({})}) %}
+{%       endif %}
+{%     endfor %}
+{%   endif %}
+{% endfor %}
+{% for _beat in elasticbeats__beats|d([]) %}
+{%   if _beat['name'] == 'filebeat' %}
+{%     for _section in [ 'filebeat', 'output', 'shipper', 'logging' ] %}
+{%       if _section in _beat %}
+{%         set _ = _config.update({_section: (_config[_section] | combine(_beat['config'][_section], recursive=True))}) %}
+{%       endif %}
+{%     endfor %}
+{%   endif %}
+{% endfor %}
+# {{ ansible_managed }}
+
+{{ _config | to_nice_yaml }}
