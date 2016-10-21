@@ -1,20 +1,41 @@
+{#
+ # First set default configuration from elasticbeats__beats_defaults
+ #}
 {% set _config = {} %}
-{% for _default in elasticbeats__beats_defaults %}
-{%   if _default['name'] == 'packetbeat' %}
-{%     for _section in [ 'interfaces', 'packetbeat.interfaces', 'protocols', 'packetbeat.protocols', 'output', 'shipper', 'logging' ] %}
-{%       if 'config' in _default and _section in _default['config'] %}
-{%         set _ = _config.update({_section: _default['config'][_section]|d({})}) %}
-{%       endif %}
-{%     endfor %}
+{% for _default in elasticbeats__beats_defaults|d([]) %}
+{%   if _default['name'] == 'packetbeat' and 'config' in _default %}
+{#
+ #  Only copy valid configuration keys for Beats 3.x
+ #}
+{%     if elasticbeats__version | version_compare('5.0-pre', '<') %}
+{%       for _section in [ 'interfaces', 'protocols', 'output', 'shipper', 'logging' ] %}
+{%         if _section in _default['config'] %}
+{%           set _ = _config.update({_section: _default['config'][_section]}) %}
+{%         endif %}
+{%       endfor %}
+{%     else %}
+{%       for _key in _default['config'] %}
+{%         set _ = _config.update({_key: _default['config'][_key]}) %}
+{%       endfor %}
+{%     endif %}
 {%   endif %}
 {% endfor %}
+{#
+ #  Overwrite defaults with user configuration
+ #}
 {% for _beat in elasticbeats__beats|d([]) %}
-{%   if _beat['name'] == 'packetbeat' %}
-{%     for _section in [ 'interfaces', 'packetbeat.interfaces', 'protocols', 'packetbeat.protocols', 'output', 'shipper', 'logging' ] %}
-{%       if _section in _beat %}
-{%         set _ = _config.update({_section: (_config[_section] | combine(_beat['config'][_section], recursive=True))}) %}
-{%       endif %}
-{%     endfor %}
+{%   if _beat['name'] == 'packetbeat' and 'config' in _beat %}
+{%     if elasticbeats__version | version_compare('5.0-pre', '<') %}
+{%       for _section in [ 'interfaces', 'protocols', 'output', 'shipper', 'logging' ] %}
+{%         if _section in _beat['config'] %}
+{%           set _ = _config.update({_section: (_config[_section] | combine(_beat['config'][_section], recursive=True))}) %}
+{%         endif %}
+{%       endfor %}
+{%     else %}
+{%       for _key in _beat['config'] %}
+{%         set _ = _config.update({_key: (_config[_key] | combine(_beat['config'][_key], recursive=True))}) %}
+{%       endfor %}
+{%     endif %}
 {%   endif %}
 {% endfor %}
 {#
@@ -23,9 +44,31 @@
 {% if elasticbeats__version | version_compare('5.0-pre', '>=') %}
 {%   for _deprecated in [ 'interfaces', 'protocols' ] %}
 {%     if _deprecated in _config %}
-{%       set _migrated = 'packetbeat.' + _deprecated %}
-{%       if not _migrated in _config %}
-{%         set _ = _config.update({_migrated: _config[_deprecated]}) %}
+{#
+ # Check each key if it is already set via new syntax; if so, drop the old
+ # value, otherwise convert to new syntax.
+ #}
+{%       if 'packetbeat' in _config %}
+{%         if _deprecated in _config['packetbeat'] %}
+{%           for _key in _config[_deprecated] %}
+{%             if _key in _config['packetbeat'][_deprecated] %}
+{%               set _ = _config[_deprecated].pop(_key) %}
+{%             else %}
+{%               set _ = _config['packetbeat'][_deprecated].update({_key: _config[_deprecated][_key]}) %}
+{%               set _ = _config[_deprecated].pop(_key) %}
+{%             endif %}
+{%           endfor %}
+{%         else %}
+{%           set _ = _config['packetbeat'].update({_deprecated: _config[_deprecated]}) %}
+{%           set _ = _config.pop(_deprecated) %}
+{%         endif %}
+{%       else %}
+{%         for _key in _config[_deprecated] %}
+{%           if ('packetbeat.' + _deprecated + '.' + _key) in _config %}
+{%             set _ = _config[_deprecated].pop(_key) %}
+{%           endif %}
+{%         endfor %}
+{%         set _ = _config.update({'packetbeat': {_deprecated: _config[_deprecated]}}) %}
 {%         set _ = _config.pop(_deprecated) %}
 {%       endif %}
 {%     endif %}
