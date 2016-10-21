@@ -1,7 +1,7 @@
 {% set _config = {} %}
 {% for _default in elasticbeats__beats_defaults %}
 {%   if _default['name'] == 'packetbeat' %}
-{%     for _section in [ 'interfaces', 'protocols', 'output', 'shipper', 'logging' ] %}
+{%     for _section in [ 'interfaces', 'packetbeat.interfaces', 'protocols', 'packetbeat.protocols', 'output', 'shipper', 'logging' ] %}
 {%       if 'config' in _default and _section in _default['config'] %}
 {%         set _ = _config.update({_section: _default['config'][_section]|d({})}) %}
 {%       endif %}
@@ -10,13 +10,32 @@
 {% endfor %}
 {% for _beat in elasticbeats__beats|d([]) %}
 {%   if _beat['name'] == 'packetbeat' %}
-{%     for _section in [ 'interfaces', 'protocols', 'output', 'shipper', 'logging' ] %}
+{%     for _section in [ 'interfaces', 'packetbeat.interfaces', 'protocols', 'packetbeat.protocols', 'output', 'shipper', 'logging' ] %}
 {%       if _section in _beat %}
 {%         set _ = _config.update({_section: (_config[_section] | combine(_beat['config'][_section], recursive=True))}) %}
 {%       endif %}
 {%     endfor %}
 {%   endif %}
 {% endfor %}
+{#
+ #  Migate configuration to Beats 5.x
+ #}
+{% if elasticbeats__version | version_compare('5.0-pre', '>=') %}
+{%   for _deprecated in [ 'interfaces', 'protocols' ] %}
+{%     if _deprecated in _config %}
+{%       set _migrated = 'packetbeat.' + _deprecated %}
+{%       if not _migrated in _config %}
+{%         set _ = _config.update({_migrated: _config[_deprecated]}) %}
+{%         set _ = _config.pop(_deprecated) %}
+{%       endif %}
+{%     endif %}
+{%   endfor %}
+{%   for _shipper in _config['shipper'] %}
+{%     set _ = _config.update(_shipper) %}
+{%     set _ = _config['shipper'].pop(_shipper) %}
+{%   endfor %}
+{%   set _ = _config.pop('shipper') %}
+{% endif %}
 # {{ ansible_managed }}
 
 {{ _config | to_nice_yaml }}
