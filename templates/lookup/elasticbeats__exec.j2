@@ -1,0 +1,13 @@
+{% set _execs = [] %}
+{% for _beat in elasticbeats__beats|d([]) %}
+{%   if 'exec' in _beat %}
+{%      set _ = _execs.extend(_beat['exec']) %}
+{%   else %}
+{%      if elasticbeats__version | version_compare('5.0-pre', '>=') %}
+{%        set _ = _execs.append(_beat['name'] + '.sh') %}
+{%      else %}
+{%        set _ = _execs.append(_beat['name']) %}
+{%      endif %}
+{%   endif %}
+{% endfor %}
+{{ _execs }}

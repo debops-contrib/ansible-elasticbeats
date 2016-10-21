@@ -32,7 +32,7 @@
 - name: Ensure specified packages are in there desired state
   package:
     name: '{{ item }}'
-    state: 'present'
+    state: '{{ elasticbeats__deploy_state }}'
   with_flattened: '{{ lookup("template", "lookup/elasticbeats__packages.j2") | from_yaml }}'
 
 - name: Divert original config
@@ -52,10 +52,11 @@
     mode: '0640'
     validate: '{{ item.2 }} -c %s -configtest'
   notify:
-    - 'Restart {{ item.2 | title }}'
+    - 'Restart {{ item.3 | title }}'
   with_together:
     - '{{ lookup("template", "lookup/elasticbeats__configdirs.j2") }}'
     - '{{ lookup("template", "lookup/elasticbeats__configfiles.j2") }}'
+    - '{{ lookup("template", "lookup/elasticbeats__exec.j2") }}'
     - '{{ lookup("template", "lookup/elasticbeats__services.j2") }}'
 
 - name: Ensure Beat services are in the desired state
