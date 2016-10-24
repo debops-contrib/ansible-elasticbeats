@@ -1,9 +1,26 @@
-{% set _services = [] %}
-{% for _beat in elasticbeats__beats|d([]) %}
-{%   if "service" in _beat %}
-{%      set _ = _services.extend(_beat["service"]) %}
+{% import 'lookup_macros.j2' as elasticbeats__lookup_macros with context %}
+{#
+ #  Add service name to the list. The name is chosen as following:
+ #    - 'service' property if defined
+ #    - beat name given in 'name' property
+ #}
+{% macro add_service(_services, _beat) %}
+{%   if 'service' in _beat %}
+{%      set _ = _services.extend(_beat['service']) %}
 {%   else %}
-{%      set _ = _services.append(_beat["name"]) %}
+{%      set _ = _services.append(_beat['name']) %}
+{%   endif %}
+{% endmacro %}
+{#
+ #  Return a list of the service names of all beats defined in `elasticbeats__beats`
+ #}
+{% set _services = [] %}
+{% set _valid_beats = elasticbeats__lookup_macros.get_valid_beats() | from_yaml %}
+{% for _beat in elasticbeats__beats|d([]) %}
+{%   if _valid_beats and (_beat["name"] in _valid_beats) %}
+{%     set _ = add_service(_services, _beat) %}
+{%   elif not _valid_beats %}
+{%     set _ = add_service(_services, _beat) %}
 {%   endif %}
 {% endfor %}
-{{ _services }}
+{{ _services | to_yaml }}

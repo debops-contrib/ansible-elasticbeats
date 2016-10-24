@@ -40,8 +40,8 @@
   args:
     creates: '{{ item.0 }}/{{ item.1 }}.dpkg-divert'
   with_together:
-    - '{{ lookup("template", "lookup/elasticbeats__configdirs.j2") }}'
-    - '{{ lookup("template", "lookup/elasticbeats__configfiles.j2") }}'
+    - '{{ lookup("template", "lookup/elasticbeats__configdirs.j2") | from_yaml }}'
+    - '{{ lookup("template", "lookup/elasticbeats__configfiles.j2") | from_yaml }}'
 
 - name: Configure Beats services
   template:
@@ -54,14 +54,14 @@
   notify:
     - 'Restart {{ item.3 | title }}'
   with_together:
-    - '{{ lookup("template", "lookup/elasticbeats__configdirs.j2") }}'
-    - '{{ lookup("template", "lookup/elasticbeats__configfiles.j2") }}'
-    - '{{ lookup("template", "lookup/elasticbeats__exec.j2") }}'
-    - '{{ lookup("template", "lookup/elasticbeats__services.j2") }}'
+    - '{{ lookup("template", "lookup/elasticbeats__configdirs.j2") | from_yaml }}'
+    - '{{ lookup("template", "lookup/elasticbeats__configfiles.j2") | from_yaml }}'
+    - '{{ lookup("template", "lookup/elasticbeats__exec.j2") | from_yaml }}'
+    - '{{ lookup("template", "lookup/elasticbeats__services.j2") | from_yaml }}'
 
 - name: Ensure Beat services are in the desired state
   service:
     name: '{{ item }}'
     state: 'started'
     enabled: True
-  with_items: '{{ lookup("template", "lookup/elasticbeats__services.j2") }}'
+  with_items: '{{ lookup("template", "lookup/elasticbeats__services.j2") | from_yaml }}'
