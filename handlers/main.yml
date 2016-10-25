@@ -10,6 +10,11 @@
     name: 'topbeat'
     state: 'restarted'
 
+- name: Restart Metricbeat
+  service:
+    name: 'metricbeat'
+    state: 'restarted'
+
 - name: Restart Packetbeat
   service:
     name: 'packetbeat'

@@ -1,0 +1,32 @@
+{#
+ # First set default configuration from elasticbeats__beats_defaults
+ #}
+{% set _config = {} %}
+{% for _default in elasticbeats__beats_defaults %}
+{%   if _default['name'] == 'metricbeat' %}
+{%     if 'config' in _default %}
+{%       for _key in _default['config'] %}
+{%         set _ = _config.update({_key: _default['config'][_key]}) %}
+{%       endfor %}
+{%     endif %}
+{%   endif %}
+{% endfor %}
+{#
+ #  Overwrite defaults with user configuration
+ #}
+{% for _beat in elasticbeats__beats|d([]) %}
+{%   if _beat['name'] == 'metricbeat' %}
+{%     if 'config' in _beat %}
+{%       for _key in _beat['config'] %}
+{%         if _key in _config and _config[_key] is mapping %}
+{%           set _ = _config.update({_key: (_config[_key] | combine(_beat['config'][_key], recursive=True))}) %}
+{%         else %}
+{%           set _ = _config.update({_key: _beat['config'][_key]}) %}
+{%         endif %}
+{%       endfor %}
+{%     endif %}
+{%   endif %}
+{% endfor %}
+# {{ ansible_managed }}
+
+{{ _config | to_nice_yaml }}

@@ -39,6 +39,7 @@ elasticbeats__beats_defaults:
       shipper: {}
       logging: '{{ elasticbeats__logging_defaults }}'
 
+  # only used in Beats 3.x
   - name: 'topbeat'
     config:
       input:
@@ -51,6 +52,24 @@ elasticbeats__beats_defaults:
           cpu_per_core: false
       output: '{{ elasticbeats__output_defaults }}'
       shipper: {}
+      logging: '{{ elasticbeats__logging_defaults }}'
+
+  # only used in Beats 5.x
+  - name: 'metricbeat'
+    config:
+      metricbeat.modules:
+        - module: system
+          metricsets:
+            - cpu
+            - load
+            - filesystem
+            - memory
+            - network
+            - process
+          enabled: true
+          period: 10s
+          processes: [".*"]
+      output: '{{ elasticbeats__output_defaults }}'
       logging: '{{ elasticbeats__logging_defaults }}'
 
   - name: 'packetbeat'
