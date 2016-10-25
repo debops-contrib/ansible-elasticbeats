@@ -12,7 +12,11 @@
 {%   if _beat['name'] == 'filebeat' %}
 {%     for _section in [ 'filebeat', 'output', 'shipper', 'logging' ] %}
 {%       if _section in _beat %}
-{%         set _ = _config.update({_section: (_config[_section] | combine(_beat['config'][_section], recursive=True))}) %}
+{%         if _section in _config %}
+{%           set _ = _config.update({_section: (_config[_section] | combine(_beat['config'][_section], recursive=True))}) %}
+{%         else %}
+{%           set _ = _config.update({_section: _beat['config'][_section]}) %}
+{%         endif %}
 {%       endif %}
 {%     endfor %}
 {%   endif %}

@@ -1,9 +1,27 @@
-{% set _configdirs = [] %}
-{% for _beat in elasticbeats__beats|d([]) %}
-{%   if "" in _beat %}
-{%      set _ = _configdirs.extend(_beat["configdir"]) %}
+{% import 'lookup_macros.j2' as elasticbeats__lookup_macros with context %}
+{#
+ #  Add configuration directory to the list. The name is chosen as following:
+ #    - 'configdir' property if defined
+ #    - /etc/<name> where the beat name is taken from the 'name' property
+ #}
+{% macro add_configdir(_configdirs, _beat) %}
+{%   if 'configdir' in _beat %}
+{%      set _ = _configdirs.append(_beat['configdir']) %}
 {%   else %}
-{%      set _ = _configdirs.append("/etc/" + _beat["name"]) %}
+{%      set _ = _configdirs.append('/etc/' + _beat['name']) %}
+{%   endif %}
+{% endmacro %}
+{#
+ #  Return a list of the configuration directories of all beats defined in
+ #  `elasticbeats__beats`
+ #}
+{% set _configdirs = [] %}
+{% set _valid_beats = elasticbeats__lookup_macros.get_valid_beats() | from_yaml %}
+{% for _beat in elasticbeats__beats|d([]) %}
+{%   if _valid_beats and (_beat["name"] in _valid_beats) %}
+{%     set _ = add_configdir(_configdirs, _beat) %}
+{%   elif not _valid_beats %}
+{%     set _ = add_configdir(_configdirs, _beat) %}
 {%   endif %}
 {% endfor %}
-{{ _configdirs }}
+{{ _configdirs | to_yaml }}

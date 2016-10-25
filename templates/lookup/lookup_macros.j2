@@ -1,0 +1,14 @@
+{% macro get_valid_beats() %}
+{% set _beats = [] %}
+{#
+ #  Check if version string is reliable
+ #}
+{% if elasticbeats__apt_repo_source | search(elasticbeats__apt_repo_map[elasticbeats__version]) %}
+{%   if elasticbeats__version | version_compare('5.0-pre', '<') %}
+{%     set _ = _beats.extend(['filebeat', 'packetbeat', 'topbeat']) %}
+{%   else %}
+{%     set _ = _beats.extend(['filebeat', 'packetbeat', 'metricbeat']) %}
+{%   endif %}
+{% endif %}
+{{ _beats | to_yaml }}
+{% endmacro %}
