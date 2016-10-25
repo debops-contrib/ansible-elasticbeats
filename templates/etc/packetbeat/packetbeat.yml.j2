@@ -28,12 +28,20 @@
 {%     if elasticbeats__version | version_compare('5.0-pre', '<') %}
 {%       for _section in [ 'interfaces', 'protocols', 'output', 'shipper', 'logging' ] %}
 {%         if _section in _beat['config'] %}
-{%           set _ = _config.update({_section: (_config[_section] | combine(_beat['config'][_section], recursive=True))}) %}
+{%           if _section in _config %}
+{%             set _ = _config.update({_section: (_config[_section] | combine(_beat['config'][_section], recursive=True))}) %}
+{%           else %}
+{%             set _ = _config.update({_section: _beat['config'][_section]}) %}
+{%           endif %}
 {%         endif %}
 {%       endfor %}
 {%     else %}
 {%       for _key in _beat['config'] %}
-{%         set _ = _config.update({_key: (_config[_key] | combine(_beat['config'][_key], recursive=True))}) %}
+{%         if _key in _config %}
+{%           set _ = _config.update({_key: (_config[_key] | combine(_beat['config'][_key], recursive=True))}) %}
+{%         else %}
+{%           set _ = _config.update({_key: _beat['config'][_key]}) %}
+{%         endif %}
 {%       endfor %}
 {%     endif %}
 {%   endif %}
